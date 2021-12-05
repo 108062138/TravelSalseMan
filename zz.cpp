@@ -36,7 +36,7 @@ node::node(){
 node::~node(){
 } 
 bool operator<(const node& p1, const node& p2){
-	return p1.level < p2.level;
+	return (p1.level < p2.level) || (p1.level==p2.level && p1.bound>p2.bound);
 }
 
 int bound(node v,int n) {
@@ -53,39 +53,41 @@ int bound(node v,int n) {
 		}
 	}else{
 		unordered_set<int> lib;
+		unordered_set<int> notYet;
+		for (int i = 1; i <= n; i++)
+			notYet.insert(i);
 		lib.insert(1);
 		int len = v.path.size();
+		int curLast;
 		for (int i = 1; i < len; i++) {
 			int from = v.path[i - 1]; 
 			int to = v.path[i];
 			total += M[from][to];
 			lib.insert(to);
+			if (i == len - 1)
+				curLast = to;
+			if(i!=len-1)
+				notYet.erase(to);
 		}
-		for (int i = 1; i <= n; i++) {
-			if (lib.find(i) == lib.end()) {
+
+		for (const auto& from : notYet) {
+			if (from == 1)
+				continue;
+			if (from == curLast) {
 				curMin = INT_MAX;
-				for (int j = 1; j <= n; j++) {
-					if (M[i][j] != 0) {
-						if (j == 1) {//1 is ok
-							if (M[i][j] < curMin)
-								curMin = M[i][j];
-						}else{
-							if (lib.find(j) == lib.end())
-								if (M[i][j] < curMin)
-									curMin = M[i][j];
-						}
-					}
+				for (const auto& to : notYet) {
+					if (to == 1)
+						continue;
+					if (M[from][to] != 0 && M[from][to] < curMin)
+						curMin = M[from][to];
 				}
 				total += curMin;
-				continue;
 			}
-
-			if (i == v.path[len - 1]) {
+			else{
 				curMin = INT_MAX;
-				for (int j = 1; j <= n; j++) {
-					if (M[i][j] != 0 && lib.find(j) == lib.end())//1 is not ok
-						if (M[i][j] < curMin)
-							curMin = M[i][i];
+				for (const auto& to : notYet) {
+					if (M[from][to] != 0 && M[from][to] < curMin)
+						curMin = M[from][to];
 				}
 				total += curMin;
 			}
@@ -128,10 +130,9 @@ void travel2(int n,	vector<int>&opttour,int& minlength) {
 				if (it == v.path.end()) {
 					u.path = v.path;
 					u.path.push_back(i);
-
 					if (u.level == n - 2) {
 						int theLastCity;
-						for (auto city : u.path) 
+						for (const auto& city : u.path) 
 							have[city] = true;
 						for (int i = 1; i <= n; i++) {
 							if (have[i] == false) {
@@ -186,8 +187,12 @@ int main(){
 	travel2(N, opttour, minlength);
 	cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC << endl;
 	cout << minlength << endl;
-	for (auto x : opttour)
+	int cnt = 0;
+	for (auto x : opttour) {
 		cout << x << " ";
+		cnt++;
+		if (cnt == N - 1)break;
+	}
 	cout << endl;
 }
 
