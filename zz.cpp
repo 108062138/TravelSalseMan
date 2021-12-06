@@ -45,7 +45,7 @@ public:
 	}
 };
 bool operator<(const node& p1, const node& p2) {
-	return (p1.level < p2.level) || (p1.level == p2.level && p1.bound > p2.bound);
+	return (p1.level < p2.level) || (p1.level == p2.level && p1.bound > p2.bound+10);
 }
 
 bool findTarget(node& v, int target) {
@@ -58,10 +58,11 @@ bool findTarget(node& v, int target) {
 int bound(node& v, int n) {
 	int total = 0;
 	int curMin;
+	int i, j, from, to;
 	if (v.curSize <= 1) {
-		for (int i = 1; i <= n; i++) {
+		for (i = 1; i <= n; i++) {
 			curMin = INT_MAX;
-			for (int j = 1; j <= n; j++)
+			for (j = 1; j <= n; j++)
 				if (M[i][j] != 0)
 					if (M[i][j] < curMin)
 						curMin = M[i][j];
@@ -70,19 +71,19 @@ int bound(node& v, int n) {
 	}
 	else {
 		int curLast;
-		for (int i = 1; i < v.curSize; i++) {
-			int from = v.simPath[i - 1];
-			int to = v.simPath[i];
+		for (i = 1; i < v.curSize; i++) {
+			from = v.simPath[i - 1];
+			to = v.simPath[i];
 			total += M[from][to];
 			if (i == v.curSize - 1)
 				curLast = to;
 		}
-		for (int from = 1; from <= n; from++) {
+		for (from = 1; from <= n; from++) {
 			if (!findTarget(v, from)) {
 				if (from == 1)continue;
 				if (from == curLast) {
 					curMin = INT_MAX;
-					for (int to = 1; to <= n; to++) {
+					for (to = 1; to <= n; to++) {
 						if (to == 1)continue;
 						if (M[from][to] != 0 && M[from][to] < curMin)
 								curMin = M[from][to];
@@ -92,7 +93,7 @@ int bound(node& v, int n) {
 					total += curMin;
 				}else{
 					curMin = INT_MAX;
-					for (int to = 1; to <= n; to++) {
+					for (to = 1; to <= n; to++) {
 						if (M[from][to] != 0 && M[from][to] < curMin) 
 							curMin = M[from][to];
 						if (curMin == recM[from])
@@ -107,7 +108,7 @@ int bound(node& v, int n) {
 	return total;
 }
 
-int length(node v) {
+int length(node& v) {
 	int res = 0;
 	int to, from;
 	for (int i = 1; i < v.size(); i++) {
@@ -161,7 +162,7 @@ void travel2(int n, vector<int>& opttour, int& minlength) {
 							minlength = uLen;
 							opttour.clear();
 							for (const auto& city : u.simPath)
-								if(city>0)
+								if (city > 0)
 									opttour.push_back(city);
 						}
 					}
@@ -202,7 +203,6 @@ int main() {
 
 	vector<int> opttour;
 	int minlength;
-
 	clock_t tStart = clock();
 	travel2(N, opttour, minlength);
 	cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC << endl;
