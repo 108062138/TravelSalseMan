@@ -21,17 +21,34 @@ public:
 	node();
 	~node();
 	int level;
-	vector<int> path;
+	int path[35];
+	int size;
 	int bound;
 	node(const node& p1) { 
 		level = p1.level; 
 		bound = p1.bound; 
-		path = p1.path;
+		size = p1.size;
+		for (int i = 0; i < p1.size; i++)
+			path[i] = p1.path[i];
+		
+	}
+	void push_back(int vertex) {
+		path[size] = vertex;
+		size++;
+	}
+	bool find(int target) {
+		for (int i = 0; i < size; i++)
+			if (path[i] == target)
+				return true;
+		return false;
 	}
 };
 node::node(){
 	level = 0;
 	bound = 0;
+	size = 0;
+	for (int i = 0; i < 35; i++)
+		path[i] = -1;
 }
 node::~node(){
 } 
@@ -42,7 +59,7 @@ bool operator<(const node& p1, const node& p2){
 int bound(node v,int n) {
 	int total = 0;
 	int curMin;
-	if (v.path.size() <= 1) {
+	if (v.size <= 1) {
 		for (int i = 1; i <= n; i++) {
 			curMin = INT_MAX;
 			for(int j=1;j<=n;j++)
@@ -57,11 +74,14 @@ int bound(node v,int n) {
 		for (int i = 1; i <= n; i++)
 			notYet.insert(i);
 		lib.insert(1);
-		int len = v.path.size();
+		int len = v.size;
 		int curLast;
 		for (int i = 1; i < len; i++) {
 			int from = v.path[i - 1]; 
 			int to = v.path[i];
+			if (M[from][to] < 0 || M[from][to]>1000) {
+				cout << "ERROR!" << endl;
+			}
 			total += M[from][to];
 			lib.insert(to);
 			if (i == len - 1)
@@ -100,7 +120,7 @@ int bound(node v,int n) {
 int length(node v) {
 	int res = 0;
 	int to, from;
-	for (int i = 1; i < v.path.size(); i++) {
+	for (int i = 1; i < v.size; i++) {
 		from = v.path[i - 1]; 
 		to = v.path[i];
 		res += M[from][to];
@@ -112,42 +132,65 @@ int length(node v) {
 
 void travel2(int n,	vector<int>&opttour,int& minlength) {
 	priority_queue<node> PQ;
-	node v,u;
+	node v;
 	v.level = 0;
-	v.path.push_back(1);
+	v.push_back(1);
 	v.bound = bound(v,n);
 	minlength = INT_MAX;
 	PQ.push(v);
 
 	while (!PQ.empty()){
-		auto v = PQ.top();//remove the item with the best bound 
-		
+		node u,v;
+		v = PQ.top();//remove the item with the best bound 
 		PQ.pop();
+
 		if (v.bound < minlength) {
 			u.level = v.level + 1;//set u to a child of v
 			for (int i = 2; i <= n; i++) {
-				auto it = find(v.path.begin(), v.path.end(), i);
-				if (it == v.path.end()) {
-					u.path = v.path;
-					u.path.push_back(i);
+				bool it = v.find(i);
+				if (it == false) {
+					cout << "))))))))))))))))))))))))))))))))))))))))" << endl;
+					cout << "before u size: " << u.size << endl <<" path: ";
+					for (int tmp = 0; tmp < v.size; tmp++) {
+						u.path[tmp] = v.path[tmp];
+						cout << u.path[tmp] << " ";
+					}cout << endl;
+					u.push_back(i);
+					cout << "after u size: " << u.size << endl << " path: ";
+					for (int tmp = 0; tmp < v.size; tmp++) {
+						u.path[tmp] = v.path[tmp];
+						cout << u.path[tmp] << " ";
+					}cout << endl;
+					cout << "========================================" << endl;
 					if (u.level == n - 2) {
-						int theLastCity;
-						for (const auto& city : u.path) 
-							have[city] = true;
-						for (int i = 1; i <= n; i++) {
-							if (have[i] == false) {
-								theLastCity = i;
+						int theLastCity=-1;
+						for (int tmp = 0; tmp <u.size; tmp++)
+							have[tmp] = true;
+						for (int tmp = 1; tmp <= n; tmp++) {
+							if (have[tmp] == false) {
+								theLastCity = tmp;
 								break;
 							}
 						}
-						for (int i = 1; i <= n; i++)
-							have[i] = false;
-						u.path.push_back(theLastCity);
-						u.path.push_back(1);
+						for (int tmp = 1; tmp <= n; tmp++)
+							have[tmp] = false;
+						u.push_back(theLastCity);
+						u.push_back(1);
+						cout << "here" << endl;
+						for (int tmp = 0; tmp < u.size; tmp++) {
+							cout << u.path[tmp] << " ";
+						}
 						int uLen = length(u);
 						if (uLen < minlength) {
+							cout << "enter the opt:" << endl;
 							minlength = uLen;
-							opttour = u.path;
+							opttour.clear();
+							cout << "best path:" << endl;
+							for (int tmp = 0; tmp < u.size; tmp++) {
+								opttour.push_back(u.path[tmp]);
+								cout << u.path[tmp] << " ";
+							}
+							//opttour = u.path;
 						}
 					}
 					else{
@@ -156,8 +199,6 @@ void travel2(int n,	vector<int>&opttour,int& minlength) {
 							PQ.push(u);
 					}
 				}
-				else
-					continue;
 			}
 		}
 	}
