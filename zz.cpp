@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 #include <vector>
 #include <queue>
 #include <climits>
@@ -45,7 +46,7 @@ public:
 	}
 };
 bool operator<(const node& p1, const node& p2) {
-	return (p1.level < p2.level) || (p1.level == p2.level && p1.bound > p2.bound+10);
+	return (p1.level < p2.level) || (p1.level == p2.level && p1.bound > p2.bound);
 }
 
 bool findTarget(node& v, int target) {
@@ -55,10 +56,17 @@ bool findTarget(node& v, int target) {
 	return false;
 }
 
-int bound(node& v, int n) {
+int bound(node& v, int& n, bool& showB) {
 	int total = 0;
 	int curMin;
 	int i, j, from, to;
+	if (showB) {
+		cout << "Path: ";
+		for (int i = 0; i < v.curSize; i++)
+			cout << v.simPath[i] << " ";
+		cout << endl;
+	}
+
 	if (v.curSize <= 1) {
 		for (i = 1; i <= n; i++) {
 			curMin = INT_MAX;
@@ -78,6 +86,13 @@ int bound(node& v, int n) {
 			if (i == v.curSize - 1)
 				curLast = to;
 		}
+		if (showB) {
+			cout << "it's given value: " << total << endl;
+			cout << "it's min: " << " ";
+		}
+
+
+
 		for (from = 1; from <= n; from++) {
 			if (!findTarget(v, from)) {
 				if (from == 1)continue;
@@ -90,21 +105,40 @@ int bound(node& v, int n) {
 						if (curMin == recM[from])
 							break;
 					}
+					if(showB)
+						cout << " curLast->" << curMin << "<- ";
 					total += curMin;
 				}else{
 					curMin = INT_MAX;
 					for (to = 1; to <= n; to++) {
 						if (M[from][to] != 0 && M[from][to] < curMin) 
 							curMin = M[from][to];
-						if (curMin == recM[from])
-							break;
+						
 					}
+					if(showB)
+						cout << curMin << " ";
 					total += curMin;
 				}
 			}
+			else if (from == curLast) {
+				curMin = INT_MAX;
+				for (to = 1; to <= n; to++) {
+					if (to == 1)continue;
+					if (M[from][to] != 0 && M[from][to] < curMin)
+						curMin = M[from][to];
+					if (curMin == recM[from])
+						break;
+				}
+				if(showB)
+					cout << " curLast->" << curMin << "<- ";
+				total += curMin;
+			}
 		}
+		if(showB)
+			cout << endl;
 	}
-
+	if(showB)
+		cout << "v bound: " << total << endl;
 	return total;
 }
 
@@ -121,19 +155,19 @@ int length(node& v) {
 	return res;
 }
 
-void travel2(int n, vector<int>& opttour, int& minlength) {
+void travel2(int n, vector<int>& opttour, int& minlength,bool showB) {
 	priority_queue<node> PQ;
 	node v,u;
 	v.level = 0;
 	v.push_back(1);
-	v.bound = bound(v, n);
+	v.bound = bound(v, n, showB);
 	minlength = INT_MAX;
 	PQ.push(v);
 
 	while (!PQ.empty()) {
 		auto v = PQ.top();//remove the item with the best bound 
 		PQ.pop();
-
+		
 		if (v.bound < minlength) {
 			u.level = v.level + 1;//set u to a child of v
 			for (int i = 2; i <= n; i++) {
@@ -167,7 +201,7 @@ void travel2(int n, vector<int>& opttour, int& minlength) {
 						}
 					}
 					else {
-						u.bound = bound(u, n);
+						u.bound = bound(u, n, showB);
 						if (u.bound < minlength)
 							PQ.push(u);
 					}
@@ -204,7 +238,10 @@ int main() {
 	vector<int> opttour;
 	int minlength;
 	clock_t tStart = clock();
-	travel2(N, opttour, minlength);
+	
+	bool showB = false;
+
+	travel2(N, opttour, minlength, showB);
 	cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC << endl;
 	cout << minlength << endl;
 	int cnt = 0;
@@ -216,4 +253,6 @@ int main() {
 
 	delete[]M;
 	delete recM;
+
+	return 0;
 }
