@@ -9,6 +9,7 @@
 #include <utility>
 #include <ctime>
 #define MSZ 31
+#define DEADEND 0
 using namespace std;
 
 
@@ -23,6 +24,7 @@ public:
 		bound = 0;
 		curSize = 0;
 		usedCity = 0;
+		tail = 1;
 		for (int i = 0; i < MSZ; i++){
 			simPath[i] = char(0);
 		}
@@ -34,6 +36,7 @@ public:
 	unsigned int usedCity;
 	int curSize;
 	int bound;
+	int tail;
 	int size() {
 		return curSize;
 	}
@@ -42,12 +45,14 @@ public:
 		bound = p1.bound;
 		curSize = p1.curSize;
 		usedCity = p1.usedCity;
+		tail = 1;
 		for (int i = 0; i < MSZ; i++){
 			simPath[i] = p1.simPath[i];
 		}
 	}
 	void push_back(int city) {
 		simPath[curSize] = city;
+		tail = city;
 		curSize++;
 		usedCity += 1<<city;
 	}
@@ -67,7 +72,7 @@ int bound(node& v, int& n, bool& showB) {
 	if (showB) {
 		cout << "Path: ";
 		for (int i = 0; i < v.curSize; i++)
-			cout << v.simPath[i] << " ";
+			cout << int(v.simPath[i]) << " ";
 		cout << endl;
 	}
 
@@ -75,7 +80,7 @@ int bound(node& v, int& n, bool& showB) {
 		for (i = 1; i <= n; i++) {
 			curMin = INT_MAX;
 			for (j = 1; j <= n; j++)
-				if (M[i][j] != 0)
+				if (M[i][j] != DEADEND)
 					if (M[i][j] < curMin)
 						curMin = M[i][j];
 			total += curMin;
@@ -84,9 +89,14 @@ int bound(node& v, int& n, bool& showB) {
 	else {
 		int curLast;
 		for (i = 1; i < v.curSize; i++) {
-			from = v.simPath[i - 1];
-			to = v.simPath[i];
+			from = int(v.simPath[i - 1]);
+			to = int(v.simPath[i]);
 			total += M[from][to];
+			if(M[from][to]==DEADEND){
+				if(showB)
+					cout<<"fkupgfsdkjgdsaigjfdasifjhasdiofjoasdijfadsiljfasdeijf"<<endl;
+				return DEADEND;
+			}
 			if (i == v.curSize - 1)
 				curLast = to;
 		}
@@ -104,7 +114,7 @@ int bound(node& v, int& n, bool& showB) {
 					curMin = INT_MAX;
 					for (to = 1; to <= n; to++) {
 						if (to == 1)continue;
-						if (M[from][to] != 0 && M[from][to] < curMin)
+						if (M[from][to] != DEADEND && M[from][to] < curMin)
 								curMin = M[from][to];
 						if (curMin == recM[from])
 							break;
@@ -115,7 +125,7 @@ int bound(node& v, int& n, bool& showB) {
 				}else{
 					curMin = INT_MAX;
 					for (to = 1; to <= n; to++) {
-						if (M[from][to] != 0 && M[from][to] < curMin) 
+						if (M[from][to] != DEADEND && M[from][to] < curMin) 
 							curMin = M[from][to];
 						
 					}
@@ -128,7 +138,7 @@ int bound(node& v, int& n, bool& showB) {
 				curMin = INT_MAX;
 				for (to = 1; to <= n; to++) {
 					if (to == 1)continue;
-					if (M[from][to] != 0 && M[from][to] < curMin)
+					if (M[from][to] != DEADEND && M[from][to] < curMin)
 						curMin = M[from][to];
 					if (curMin == recM[from])
 						break;
@@ -166,21 +176,27 @@ void travel2(int n, int* opttour, int& minlength,bool showB) {
 	v.level = 0;
 	v.push_back(1);
 	v.bound = bound(v, n, showB);
+	if(showB)
+		cout<<"init tail: "<<v.tail<<endl;
 	minlength = INT_MAX;
 	PQ.push(v);
 
 	while (!PQ.empty()) {
 		auto v = PQ.top();//remove the item with the best bound 
 		PQ.pop();
+		if((double)(clock() - tStart) / CLOCKS_PER_SEC > 29)
+			return;
 		
 		if (v.bound < minlength) {
 			u.level = v.level + 1;//set u to a child of v
 			for (int i = 2; i <= n; i++) {
 				auto it = v.usedCity & 1<< i;
-				if (it == 0) {
-					memcpy(u.simPath, v.simPath, v.curSize * sizeof(char));
+
+				if (it == 0 && M[v.tail][i] != DEADEND) {
+					memcpy(u.simPath, v.simPath, MSZ * sizeof(char));
 					u.usedCity = v.usedCity;
 					u.curSize = v.curSize;
+					u.tail = v.tail;
 					u.push_back(i);
 
 					if (u.level == n - 2) {
@@ -191,12 +207,18 @@ void travel2(int n, int* opttour, int& minlength,bool showB) {
 								break;
 							}
 						}
+						if(M[i][theLastCity]==DEADEND)
+							continue;
 						u.push_back(theLastCity);
+						if(M[theLastCity][1]==DEADEND)
+							continue;
 						u.push_back(1);
 						int uLen = length(u);
 						if (uLen < minlength) {
 							minlength = uLen;
-							cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC<< " minLen: " << minlength << endl;
+							cout<<"enter here"<<uLen<<endl;
+							if(showB)
+								cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC<< " minLen: " << minlength << endl;
 							for(int i=0;i<=n;i++)
 								if(u.simPath[i]>0)
 									opttour[i] = u.simPath[i];
@@ -204,12 +226,12 @@ void travel2(int n, int* opttour, int& minlength,bool showB) {
 					}
 					else {
 						u.bound = bound(u, n, showB);
+						if(u.bound==DEADEND)
+							continue;
 						if (u.bound < minlength)
 							PQ.push(u);
 					}
 				}
-				else
-					continue;
 			}
 		}
 	}
@@ -226,16 +248,15 @@ int main() {
 		recM[i] = INT_MAX;
 		M[i] = new int[N + 5];
 	}
+
 	for (int i = 1; i <= N; i++) {
 		for (int j = 1; j <= N; j++) {
 			cin >> M[i][j];
-			M[i][j] = (M[i][j] <= 0) ? 0 : M[i][j];
-			if (M[i][j] < recM[i] && M[i][j] != 0)
+			M[i][j] = (M[i][j] <= 0) ? DEADEND : M[i][j];
+			if (M[i][j] < recM[i] && M[i][j] != DEADEND)
 				recM[i] = M[i][j];
 		}
 	}
-
-
 
 	//vector<int> opttour;
 	int opttour[MSZ];
@@ -251,8 +272,39 @@ int main() {
 		cout<<opttour[i]<<" ";
 	cout << endl;
 
+	
+	if(showB){
+		cout<<"=============================="<<endl;
+		for (int i = 1; i <= N; i++) {
+			for (int j = 1; j <= N; j++) {
+				cout<<M[i][j]<<" ";
+			}cout<<endl;
+		}
+		cout<<"=============================="<<endl;
+	}
+
 	delete[]M;
 	delete recM;
 
 	return 0;
 }
+/*
+17
+0 3 5 48 48 8 8 5 5 3 3    0    3    5    8    8   5
+    3 0    3   48   48    8    8    5    5    0    0    3    0    3    8    8    5
+    5    3 0   72   72   48   48   24   24    3    3    5    3    0   48   48   24
+   48   48   74 0    0    6    6   12   12   48   48   48   48   74    6    6   12
+   48   48   74    0 0    6    6   12   12   48   48   48   48   74    6    6   12
+    8    8   50    6    6 0    0    8    8    8    8    8    8   50    0    0    8
+    8    8   50    6    6    0 0    8    8    8    8    8    8   50    0    0    8
+    5    5   26   12   12    8    8 0    0    5    5    5    5   26    8    8    0
+    5    5   26   12   12    8    8    0 0    5    5    5    5   26    8    8    0
+    3    0    3   48   48    8    8    5    5 0    0    3    0    3    8    8    5
+    3    0    3   48   48    8    8    5    5    0 0    3    0    3    8    8    5
+    0    3    5   48   48    8    8    5    5    3    3 0    3    5    8    8    5
+    3    0    3   48   48    8    8    5    5    0    0    3 0    3    8    8    5
+    5    3    0   72   72   48   48   24   24    3    3    5    3 0   48   48   24
+    8    8   50    6    6    0    0    8    8    8    8    8    8   50 0    0    8
+    8    8   50    6    6    0    0    8    8    8    8    8    8   50    0 0    8
+    5    5   26   12   12    8    8    0    0    5    5    5    5   26    8    8 0
+*/
