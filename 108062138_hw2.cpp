@@ -21,16 +21,13 @@ public:
 		level = 0;
 		bound = 0;
 		curSize = 0;
-		for (int i = 0; i < 35; i++){
+		for (int i = 0; i < 35; i++)
 			simPath[i] = -1;
-			usedCity[i] = false;
-		}
 	}
 	~node() {
 	}
 	int level;
 	int simPath[35];
-	bool usedCity[35];
 	int curSize;
 	int bound;
 	int size() {
@@ -40,15 +37,12 @@ public:
 		level = p1.level;
 		bound = p1.bound;
 		curSize = p1.curSize;
-		for (int i = 0; i < 35; i++){
+		for (int i = 0; i < 35; i++)
 			simPath[i] = p1.simPath[i];
-			usedCity[i] = p1.usedCity[i];
-		}
 	}
 	void push_back(int city) {
 		simPath[curSize] = city;
 		curSize++;
-		usedCity[city] = true;
 	}
 };
 bool operator<(const node& p1, const node& p2) {
@@ -56,11 +50,10 @@ bool operator<(const node& p1, const node& p2) {
 }
 
 bool findTarget(node& v, int target) {
-	return v.usedCity[target];
-	//for (int i = 0; i < v.curSize; i++)
-	//	if (target == v.simPath[i])
-	//		return true;
-	//return false;
+	for (int i = 0; i < v.curSize; i++)
+		if (target == v.simPath[i])
+			return true;
+	return false;
 }
 
 int bound(node& v, int& n, bool& showB) {
@@ -181,18 +174,17 @@ void travel2(int n, int* opttour, int& minlength,bool showB) {
 				auto it = findTarget(v, i);
 				if (it == false) {
 					memcpy(u.simPath, v.simPath, v.curSize * sizeof(int));
-					memcpy(u.usedCity, v.usedCity, 35 * sizeof(bool));
 					u.curSize = v.curSize;
 					u.push_back(i);
 
 					if (u.level == n - 2) {
 						int theLastCity=87;
-						//for (int t = 1; t <= n; t++)
-						//	have[t] = false;
-						//for (int t = 0; t < u.curSize; t++)
-						//	have[u.simPath[t]] = true;
+						for (int t = 1; t <= n; t++)
+							have[t] = false;
+						for (int t = 0; t < u.curSize; t++)
+							have[u.simPath[t]] = true;
 						for (int t = 1; t <= n; t++) {
-							if (u.usedCity[t] == false) {
+							if (have[t] == false) {
 								theLastCity = t;
 								break;
 							}
@@ -250,7 +242,7 @@ int main() {
 	bool showB = false;
 
 	travel2(N, opttour, minlength, showB);
-	cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC << endl;
+	//cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC << endl;
 	cout << minlength << endl;
 	for(int i=0;i<N;i++)
 		cout<<opttour[i]<<" ";
