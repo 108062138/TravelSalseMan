@@ -8,8 +8,9 @@
 #include <unordered_set>
 #include <utility>
 #include <ctime>
-
+#define MSZ 31
 using namespace std;
+
 
 bool have[100];
 int** M;
@@ -21,16 +22,16 @@ public:
 		level = 0;
 		bound = 0;
 		curSize = 0;
-		for (int i = 0; i < 35; i++){
-			simPath[i] = -1;
-			usedCity[i] = false;
+		usedCity = 0;
+		for (int i = 0; i < MSZ; i++){
+			simPath[i] = char(0);
 		}
 	}
 	~node() {
 	}
 	int level;
-	int simPath[35];
-	bool usedCity[35];
+	char simPath[MSZ];
+	unsigned int usedCity;
 	int curSize;
 	int bound;
 	int size() {
@@ -40,15 +41,15 @@ public:
 		level = p1.level;
 		bound = p1.bound;
 		curSize = p1.curSize;
-		for (int i = 0; i < 35; i++){
+		usedCity = p1.usedCity;
+		for (int i = 0; i < MSZ; i++){
 			simPath[i] = p1.simPath[i];
-			usedCity[i] = p1.usedCity[i];
 		}
 	}
 	void push_back(int city) {
 		simPath[curSize] = city;
 		curSize++;
-		usedCity[city] = true;
+		usedCity += 1<<city;
 	}
 };
 bool operator<(const node& p1, const node& p2) {
@@ -56,11 +57,7 @@ bool operator<(const node& p1, const node& p2) {
 }
 
 bool findTarget(node& v, int target) {
-	return v.usedCity[target];
-	//for (int i = 0; i < v.curSize; i++)
-	//	if (target == v.simPath[i])
-	//		return true;
-	//return false;
+	return v.usedCity & 1<< target;
 }
 
 int bound(node& v, int& n, bool& showB) {
@@ -101,7 +98,7 @@ int bound(node& v, int& n, bool& showB) {
 
 
 		for (from = 1; from <= n; from++) {
-			if (!findTarget(v, from)) {
+			if (!(v.usedCity & 1 << from)) {
 				if (from == 1)continue;
 				if (from == curLast) {
 					curMin = INT_MAX;
@@ -165,6 +162,7 @@ int length(node& v) {
 void travel2(int n, int* opttour, int& minlength,bool showB) {
 	priority_queue<node> PQ;
 	node v,u;
+	clock_t tStart = clock();
 	v.level = 0;
 	v.push_back(1);
 	v.bound = bound(v, n, showB);
@@ -178,21 +176,17 @@ void travel2(int n, int* opttour, int& minlength,bool showB) {
 		if (v.bound < minlength) {
 			u.level = v.level + 1;//set u to a child of v
 			for (int i = 2; i <= n; i++) {
-				auto it = findTarget(v, i);
-				if (it == false) {
-					memcpy(u.simPath, v.simPath, v.curSize * sizeof(int));
-					memcpy(u.usedCity, v.usedCity, 35 * sizeof(bool));
+				auto it = v.usedCity & 1<< i;
+				if (it == 0) {
+					memcpy(u.simPath, v.simPath, v.curSize * sizeof(char));
+					u.usedCity = v.usedCity;
 					u.curSize = v.curSize;
 					u.push_back(i);
 
 					if (u.level == n - 2) {
 						int theLastCity=87;
-						//for (int t = 1; t <= n; t++)
-						//	have[t] = false;
-						//for (int t = 0; t < u.curSize; t++)
-						//	have[u.simPath[t]] = true;
 						for (int t = 1; t <= n; t++) {
-							if (u.usedCity[t] == false) {
+							if (!(u.usedCity & 1 << t)) {
 								theLastCity = t;
 								break;
 							}
@@ -202,6 +196,7 @@ void travel2(int n, int* opttour, int& minlength,bool showB) {
 						int uLen = length(u);
 						if (uLen < minlength) {
 							minlength = uLen;
+							cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC<< " minLen: " << minlength << endl;
 							for(int i=0;i<=n;i++)
 								if(u.simPath[i]>0)
 									opttour[i] = u.simPath[i];
@@ -243,14 +238,14 @@ int main() {
 
 
 	//vector<int> opttour;
-	int opttour[35];
+	int opttour[MSZ];
 	int minlength;
-	clock_t tStart = clock();
+	//clock_t tStart = clock();
 	
 	bool showB = false;
 
 	travel2(N, opttour, minlength, showB);
-	cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC << endl;
+	//cout << "Time taken: " << (double)(clock() - tStart) / CLOCKS_PER_SEC << endl;
 	cout << minlength << endl;
 	for(int i=0;i<N;i++)
 		cout<<opttour[i]<<" ";
